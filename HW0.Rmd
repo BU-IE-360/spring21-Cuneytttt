@@ -1,0 +1,43 @@
+---
+title: "Interesting Forecasting Applications with R"
+author: Cüneyt Çakır - IE360 - Spring 2021
+---
+```{r,echo=FALSE,results="hide"}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+```{r,echo=FALSE,eval=FALSE}
+rmarkdown::render("/home/baydogan/Courses/IE360/Guidelines/example_homework_0.Rmd",output_format="pdf_document")
+rmarkdown::render("/home/baydogan/Courses/IE360/Guidelines/example_homework_0.Rmd",output_format="html_document")
+```
+
+1. [Time Series Forecasting Using R](https://www.pluralsight.com/guides/time-series-forecasting-using-r)
+
+    In this guide, you will learn how to implement the following time series forecasting techniques using the statistical programming language 'R': 1. Naive Method 2. Simple Exponential Smoothing 3. Holt's Trend Method 4. ARIMA 5. TBATS
+
+2. [Time Series Forecasting in R](https://towardsdatascience.com/a-guide-to-forecasting-in-r-6b0c9638c261)
+
+    Here is what we will see in this article:
+    Naive methods
+    Exponential Smoothing (State-space models and DSHW)
+    BATS and TBATS
+    ARIMA/SARIMA models
+    How to set up a one-step-ahead forecast
+    
+3. [The Best Guide to Time Series Forecasting in R](https://www.simplilearn.com/tutorials/data-science-tutorial/time-series-forecasting-in-r)
+
+    Following are the topics that will be discussed in this article:
+    What is Time Series Forecasting?
+    Time Series Forecasting Applications
+    Time Series Components
+    Time Series Methods
+    Time Series Forecasting Using The ARIMA Model
+   
+4. [Using R for Time Series Analysis](https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html)
+
+    This booklet itells you how to use the R statistical software to carry out some simple analyses that are common in analysing time series data.
+    
+5. [Time Series Forecasting](http://r-statistics.co/Time-Series-Forecasting-With-R.html)
+
+    This is a follow-up to the introduction to time series analysis, but focused more on forecasting rather than analysis.
