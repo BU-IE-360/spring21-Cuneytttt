@@ -1,0 +1,306 @@
+---
+title: "Homework1"
+author: "Cüneyt Çakır"
+date: "16 04 2021"
+output: 
+  html_document:
+      fig_width: 9
+      fig_height: 6
+      fig_caption: true
+      code_folding: hide
+      toc: true
+      toc_float: true
+      toc_depth: 4 
+      number_sections: true
+      theme: united
+      highlight: pygments 
+      
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Introduction
+The Central Bank of the Republic of Turkey, CBRT (Turkish: Türkiye Cumhuriyet Merkez Bankası, TCMB) is the central bank of Turkey. Its responsibilities include conducting monetary and exchange rate policy, managing international reserves of Turkey, as well as printing and issuing banknotes, and establishing, maintaining and regulating payment systems in the country. The CBRT is tasked by law to achieve and maintain price and financial stability in Turkey, and has a mandate to use, by its own discretion, whichever policy instrument at its disposal to reach these objectives. Therefore, it has instrument but not goal independence. Since 2006, the CBRT follows a full-fledged inflation targeting regime([EVDS](https://evds2.tcmb.gov.tr/)). For this analysis, I take data from [EVDS](https://evds2.tcmb.gov.tr/) and [Google Trends](https://trends.google.com/trends/?geo=TR).
+
+# Package Installing 
+
+I install some packages before i start out analysis.
+
+```{r warning=FALSE, message=FALSE}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(RColorBrewer)
+library(zoo)
+library(data.table)
+library(plotly)
+```
+# Data Information
+
+Three time series data is taken from [EVDS](https://evds2.tcmb.gov.tr/)and two time series data is taken from [EVDS](https://evds2.tcmb.gov.tr/) as csv files.
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+average_expenditure_per_capita<-read_excel("C:/Users/froze/OneDrive/Masaüstü/IE360/average_expenditure_per_capita.xlsx")
+otel_keyword<-read.csv("C:/Users/froze/OneDrive/Masaüstü/IE360/otel_keyword.csv",sep = ",")
+istanbul_keyword<-read.csv("C:/Users/froze/OneDrive/Masaüstü/IE360/istanbul_keyword.csv",sep = ",")
+buy_euro_currency<-read_excel("C:/Users/froze/OneDrive/Masaüstü/IE360/buy_euro_currency.xlsx")
+doviz_keyword<-read.csv("C:/Users/froze/OneDrive/Masaüstü/IE360/doviz_keyword.csv",sep = ",")
+euro_keyword<-read.csv("C:/Users/froze/OneDrive/Masaüstü/IE360/euro_keyword.csv",sep = ",")
+total_debit_card_and_credit_card_spending_amount<-read_excel("C:/Users/froze/OneDrive/Masaüstü/IE360/total_debit_card_and_credit_card_spending_amount.xlsx")
+enflasyon_keyword<-read.csv("C:/Users/froze/OneDrive/Masaüstü/IE360/enflasyon_keyword.csv",sep = ",")
+taksit_keyword<-read.csv("C:/Users/froze/OneDrive/Masaüstü/IE360/taksit_keyword.csv",sep = ",")
+
+```
+
+## First: Average Expenditure Per Person (USD)
+
+Compared to a few years ago, the current value of the Turkish lira against the US dollar and the euro will benefit tourists on their trip to Turkey, but perhaps not as much as they’d wish. Many Turkish travel companies such as hotels, car rental agencies, tour operators, etc., price their products and services in dollars or euros. Those prices may stay the same. Costs priced in Turkish liras, such as restaurant meals, public transit, and airfares, will probably be lower for visitors converting euros and dollars to liras.
+Visitor should plans to spend around TRY334  per day on your vacation in Turkey, which is the average daily price based on the expenses of other visitors. Past travelers have spent, on average, TRY73 on meals for one day and TRY22 on local transportation. (9 March 2021)  
+Firstly, I analysis the average amount of money spent by a tourist in Turkey.
+
+
+
+```{r eval=FALSE}
+average_expenditure_per_capita<-read_excel("ie360/average_expenditure_per_capita.xlsx")
+otel_keyword<-read.csv("ie360/otel_keyword.csv",sep = ",")
+istanbul_keyword<-read.csv("ie360/istanbul_keyword.csv",sep = ",")
+
+```
+![](C:/Users/froze/OneDrive/Masaüstü/IE360/turist.jpg)
+
+## Second: Euro (Buying Currency)
+
+Euro currency is rising increasingly in Turkey. Fluctuations in the economy are the biggest factor in the increase of the euro currency.  
+Secondly, I analyzed the change of the euro currency against the Turkish lira.
+
+```{r eval=FALSE}
+buy_euro_currency<-read_excel("ie360/buy_euro_currency.xlsx")
+doviz_keyword<-read.csv("ie360/doviz_keyword.csv",sep = ",")
+euro_keyword<-read.csv("ie360/euro_keyword.csv",sep = ",")
+```
+
+![](C:/Users/froze/OneDrive/Masaüstü/IE360/eurocurrency.jpg)
+
+## Third: Total Debit and Credit Card Spending Amount
+
+Today, the use of debit and credit cards has increased considerably. Although the use of cash is not preferred anymore, the lightness and ease of use of the cards have brought people closer to using cards.  
+Thirdly, I analysis the total amount of use of debit and credit cards in Turkey.
+
+```{r eval=FALSE}
+total_debit_card_and_credit_card_spending_amount<-read_excel("ie360/total_debit_card_and_credit_card_spending_amount.xlsx")
+enflasyon_keyword<-read.csv("ie360/enflasyon_keyword.csv",sep = ",")
+taksit_keyword<-read.csv("ie360/taksit_keyword.csv",sep = ",")
+
+```
+![](C:/Users/froze/OneDrive/Masaüstü/IE360/creditcard.jpg)
+
+# Data Preparation
+
+## First: Average Expenditure Per Person (USD)
+Firstly, I converted data into a data table. After that, i checked for duplicated(duplicated) and NA(is.na) values. Lastly i renamed(rename) and glimpsed(glimpse).
+
+
+```{r warning=FALSE, message=FALSE, results="hide"}
+average_expenditure_per_capita_new <- setDT(average_expenditure_per_capita)
+sum(is.na(average_expenditure_per_capita_new))
+sum(duplicated(average_expenditure_per_capita_new))
+average_expenditure_per_capita_new <-average_expenditure_per_capita_new%>%rename(Date=Tarih,Expenditure=`TP SGEGI K7`)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+average_expenditure_per_capita_new %>% glimpse()
+otel_keyword_new<-setDT(otel_keyword)
+sum(is.na(otel_keyword_new))
+sum(duplicated(otel_keyword_new))
+otel_keyword_new <-otel_keyword_new%>%rename(Date=Ay,Hotel=otel...TÃ.rkiye.)%>%
+   mutate(Date=as.Date(as.yearmon(Date)))
+otel_keyword_new %>% glimpse()
+istanbul_keyword_new<-setDT(istanbul_keyword)
+sum(is.na(istanbul_keyword_new))
+sum(duplicated(istanbul_keyword_new))
+istanbul_keyword_new <-istanbul_keyword_new%>%rename(Date=Ay,Istanbul=istanbul...TÃ.rkiye.)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+istanbul_keyword_new %>% glimpse()
+```
+
+
+## Second: Euro (Buying Currency)
+I did the same things I did in the first stage
+
+```{r warning=FALSE, message=FALSE, results="hide"}
+buy_euro_currency_new <- setDT(buy_euro_currency)
+sum(is.na(buy_euro_currency_new))
+sum(duplicated(buy_euro_currency_new))
+buy_euro_currency_new <-buy_euro_currency_new%>%rename(Date=Tarih,Currency=`TP DK EUR A YTL`)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+buy_euro_currency_new %>% glimpse()
+doviz_keyword_new<-setDT(doviz_keyword)
+sum(is.na(doviz_keyword_new))
+sum(duplicated(doviz_keyword_new))
+doviz_keyword_new <-doviz_keyword_new%>%rename(Date=Ay,Doviz=dÃ.viz...T.rkiye.)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+doviz_keyword_new %>% glimpse()
+euro_keyword_new<-setDT(euro_keyword)
+sum(is.na(euro_keyword_new))
+sum(duplicated(euro_keyword_new))
+euro_keyword_new <-euro_keyword_new%>%rename(Date=Ay,Euro=Euro...Türkiye.)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+euro_keyword_new %>% glimpse()
+```
+## Third: Total Debit and Credit Card Spending Amount
+I did the same things I did in the first stage
+```{r warning=FALSE, message=FALSE, results="hide"}
+total_debit_card_and_credit_card_spending_amount_new <- setDT(total_debit_card_and_credit_card_spending_amount)
+sum(is.na(total_debit_card_and_credit_card_spending_amount_new))
+sum(duplicated(total_debit_card_and_credit_card_spending_amount_new))
+total_debit_card_and_credit_card_spending_amount_new <-total_debit_card_and_credit_card_spending_amount_new%>%rename(Date=Tarih,CardExp=`TP KKHARTUT KT1`)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+total_debit_card_and_credit_card_spending_amount_new %>% glimpse()
+enflasyon_keyword_new<-setDT(enflasyon_keyword)
+sum(is.na(enflasyon_keyword_new))
+sum(duplicated(enflasyon_keyword_new))
+enflasyon_keyword_new <-enflasyon_keyword_new%>%rename(Date=Ay,Inflation=enflasyon...TÃ.rkiye.)%>%
+   mutate(Date=as.Date(as.yearmon(Date)))
+enflasyon_keyword_new %>% glimpse()
+taksit_keyword_new<-setDT(taksit_keyword)
+sum(is.na(taksit_keyword_new))
+sum(duplicated(taksit_keyword_new))
+taksit_keyword_new <-taksit_keyword_new%>%rename(Date=Ay,HirePurchase=taksit...TÃ.rkiye.)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+taksit_keyword_new %>% glimpse()
+```
+# Data Visualization
+
+## First: Average Expenditure Per Person (USD)
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=average_expenditure_per_capita_new, aes(x=Date, y=Expenditure, group=1)) +
+  geom_step(color="red")+
+  geom_point()+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Average Expenditure Per Person (USD) in Turkey between Jan 2015 and December 2020",
+    x = "Date",
+    y = "Expenditure"
+  ))
+```
+Due to the change in exchange rates after 2015, it has caused tourists to spend less. Since the Turkish lira depreciated significantly against the dollar, tourists coming to the country could travel with less dollars.
+
+```{r warning=FALSE, message=FALSE}
+
+ggplotly(ggplot(data=otel_keyword_new, aes(x=Date, y=Hotel, group=1)) +
+  geom_line(color="blue")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Number of searches for 'Otel' in Turkey between January 2015 and December 2020",
+    x = "Date",
+    y = "Number of searches for 'Otel'" 
+  ))
+```
+It is quite normal that the search frequency of the word 'Otel' increases in the summer months. Citizens and tourists generally prefer the summer months to take a vacation. However, there has been a permanent decline after 2019. The reason for this is the Covid-19 pandemic.
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=istanbul_keyword_new, aes(x=Date, y=Istanbul, group=1)) +
+  geom_line(color="red")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Number of searches for 'Istanbul' in Turkey between January 2015 and December 2020",
+    x = "Date",
+    y = "Number of searches for 'Istanbul' " 
+  ))
+```
+There are upward and downward fluctuations in the chart above that I cannot make sense of. We can only observe serious peaks in 2019.  
+
+## Second: Euro (Buying Currency)
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(buy_euro_currency_new,aes(x=Date,y=Currency))+geom_step(color="orange")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Euro (Buying Currency) in Turkey between January 2015 and December 2020",
+    x = "Date",
+    y = "Currency"
+  ))
+```
+The euro currency has increased significantly in the last 5 years. Although there are some periodic reasons for these increases, we can list the main reasons as follows:
+-Political Reasons
+-Central Bank Interest Policy
+-Purchases of cryptocurrency
+-Economic fluctuations
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=doviz_keyword_new, aes(x=Date, y=Doviz, group=1)) +
+  geom_line(color="blue")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Number of searches for 'Doviz' in Turkey between January 2015 and December 2020",
+    x = "Date",
+    y = "Number of searches for 'Doviz' " 
+  ))
+```
+The word 'Döviz' is a popular word recently and we can attribute the regular increase to this. The reason for the peak in 2018 is the political events of that period.
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=euro_keyword_new, aes(x=Date, y=Euro, group=1)) +
+  geom_line(color="red")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Number of searches for 'Euro' in Turkey between January 2015 and December 2020",
+    x = "Date",
+    y = "Number of searches for 'Euro' " 
+  ))
+```
+When we examine the chart above, we observe a steady increase lately. However, the biggest peak occurred in August 2018. The biggest reason for this is the Crisis of Pastor Brunson that arose at that time.  
+
+## Third: Total Debit and Credit Card Spending Amount
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(total_debit_card_and_credit_card_spending_amount_new,aes(x=Date,y=CardExp))+geom_step(color="orange")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Total Debit and Credit Card Spending Amount between January 2015 and December 2020",
+    x = "Date",
+    y = "Card Expenditure"
+  ))
+```
+The use of credit and debit cards has increased significantly in recent years. People no longer prefer to use cash. With the advancement of technology, payment methods of cards have become easier with more practical methods. The reason for the serious decrease in March 2020 is the Covid-19 outbreak.  
+
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=enflasyon_keyword_new, aes(x=Date, y=Inflation, group=1)) +
+  geom_line(color="blue")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Number of searches for 'Enflasyon' in Turkey between January 2015 and December 2020",
+    x = "Date",
+    y = "Number of searches for 'Enflasyon'" 
+  ))
+```
+
+In CPI (2003 = 100) in October 2018, 2.67% compared to the previous month, 22.56% compared to December of the previous year, 25.24% compared to the same month of the previous year and 14% on the twelve-month averages Increased by 90. Since this increase is much higher than normal, it is normal for people to google the word 'Enflasyon'.
+
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=taksit_keyword_new, aes(x=Date, y=HirePurchase, group=1)) +
+  geom_line(color="red")+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Number of searches for 'Taksit' in Turkey between January 2015 and December 2020",
+    x = "Date",
+    y = "Number of searches for 'Taksit'" 
+  ))
+```
+When we look at the graph of the use of the word 'Taksit', we see very frequent fluctuations. The reason for these fluctuations is most likely related to the economic situation at that time. But the reason for the peak in 2018 was the huge economic crisis of that period.  
+
+
+# Reference
+
+## Data
+
+[EVDS](https://evds2.tcmb.gov.tr/)
+
+[Google Trends](https://trends.google.com/trends/?geo=TR)
+
+## Others
+
+https://www.neverendingfootsteps.com/cost-of-travel-turkey-budget/
+
+https://en.wikipedia.org/wiki/Central_Bank_of_the_Republic_of_Turkey
