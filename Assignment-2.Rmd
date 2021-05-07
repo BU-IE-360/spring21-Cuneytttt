@@ -1,0 +1,235 @@
+---
+title: "Homework2"
+author: "Cüneyt Çakır"
+date: "07 05  2021"
+output: 
+  html_document:
+      fig_width: 9
+      fig_height: 6
+      fig_caption: true
+      code_folding: hide
+      toc: true
+      toc_float: true
+      toc_depth: 4 
+      number_sections: true
+      theme: united
+      highlight: pygments 
+      
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Package Installing 
+
+I install some packages before i start out analysis.
+
+```{r warning=FALSE, message=FALSE}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(RColorBrewer)
+library(zoo)
+library(data.table)
+library(plotly)
+```
+# Data Information
+
+I take four datasets from [EVDS](https://evds2.tcmb.gov.tr/). These are:
+  "-House Sales Statistics - Turkey-House Sales Statistics - Mortgaged sales",
+  "-Housing (TRY)-Weighted Average Interest Rates For Banks Loans",
+  "-Financial situation of household expectation - Seasonally unadjusted Consumer Confidence Index and Indices of Consumer Tendency Survey Questions", 
+  "-Dollar Exchange Rate"
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+dollar_buying<-read_excel("C:/Users/froze/OneDrive/Masaüstü/3600/dollar_buying.xlsx")
+house_sales<-read_excel("C:/Users/froze/OneDrive/Masaüstü/3600/house_sales.xlsx")
+housing_interest<-read_excel("C:/Users/froze/OneDrive/Masaüstü/3600/housing_interest.xlsx")
+household<-read_excel("C:/Users/froze/OneDrive/Masaüstü/3600/household.xlsx")
+```
+After receiving the data, i manipulated the data.    
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+
+house_sales_new <- setDT(house_sales)
+sum(is.na(house_sales_new))
+sum(duplicated(house_sales_new))
+house_sales_new <-house_sales_new%>%rename(Date=Date,Expenditure=`TP AKONUTSAT2 TOPLAM`)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+house_sales_new %>% glimpse()
+
+dollar_buying_new<-setDT(dollar_buying)
+sum(is.na(dollar_buying_new))
+sum(duplicated(dollar_buying_new))
+dollar_buying_new <-dollar_buying_new%>%rename(Date=Date,Rate=`TP DK USD A YTL`)%>%
+   mutate(Date=as.Date(as.yearmon(Date)))
+dollar_buying_new %>% glimpse()
+
+housing_interest_new<-setDT(housing_interest)
+sum(is.na(housing_interest_new))
+sum(duplicated(housing_interest_new))
+housing_interest_new <-housing_interest_new%>%rename(Date=Date,Interest=`TP KTF12`)%>%
+   mutate(Date=as.Date(as.yearmon(Date)))
+housing_interest_new %>% glimpse()
+
+household_new<-setDT(household)
+sum(is.na(household_new))
+sum(duplicated(household_new))
+household_new <-household_new%>%rename(Date=Date,Expectation=`TP TG2 Y03`,Real=`TP TG2 Y02`)%>%
+  mutate(Date=as.Date(as.yearmon(Date)))
+household_new %>% glimpse()
+
+```
+# Visualiton of Datasets
+
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=house_sales_new, aes(x=Date, y=Expenditure)) +
+  geom_line(color="red")+
+  geom_point()+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "House Sales Statistics - Turkey - Mortgaged sales",
+    x = "Date",
+    y = "Expenditure"
+  ))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=dollar_buying_new, aes(x=Date, y=Rate, group=1)) +
+  geom_line(color="red")+
+  geom_point()+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Dollar Exchange Rate",
+    x = "Date",
+    y = "Rate"
+  ))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+ggplot(data=household_new, aes(x=Date, y=Expectation, group=1))+
+  geom_line(color="red")+
+  geom_point()+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Financial Situation of Household Expectation - Survey",
+    x = "Date",
+    y = "Interest"
+)
+
+ggplot(data=household_new, aes(x=Date, y=Real, group=1))+
+  geom_line(color="red")+
+  geom_point()+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "Financial Situation of Household-Survey",
+    x = "Date",
+    y = "Real"
+)
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ggplotly(
+ggplot(data=housing_interest_new, aes(x=Date, y=Interest, group=1)) +
+  geom_line(color="red")+
+  geom_point()+theme(plot.title = element_text(hjust = 0.5))+
+  labs(
+    title = "I.R for Bank Loans",
+    x = "Date",
+    y = "Interest"
+  ))
+```
+
+# Modelling
+
+
+
+```{r warning=FALSE, message=FALSE}
+# sort each with date
+
+house_sales_new<-house_sales_new[order(Date),]
+household_new<-household_new[order(Date),]
+housing_interest_new<-housing_interest_new[order(Date),]
+dollar_buying_new<-dollar_buying_new[order(Date),]
+```
+
+```{r warning=FALSE, message=FALSE}
+# sort each with date
+
+lag.count<-6
+take.year.lag<-function(array_){
+  df<-c()
+  for (i in 1:lag.count){
+    df<-cbind(df,lag(array_,n=i))
+  }
+  return(df)
+}
+
+
+house_sales_new_lags=take.year.lag(house_sales_new$Expenditure)
+lag_col_names=c()
+for (i in 1:lag.count){
+  lag_col_names=append(lag_col_names,paste0("Expenditure_lag_",i))
+}
+colnames(house_sales_new_lags)=lag_col_names
+
+household_new_lags.Real=take.year.lag(household_new$Real)
+lag_col_names=c()
+for (i in 1:lag.count){
+  lag_col_names=append(lag_col_names,paste0("Real_lag_",i))
+}
+colnames(household_new_lags.Real)=lag_col_names
+
+household_new_lags.Expectation=take.year.lag(household_new$Expectation)
+lag_col_names=c()
+for (i in 1:lag.count){
+  lag_col_names=append(lag_col_names,paste0("Expectation_lag_",i))
+}
+colnames(household_new_lags.Expectation)=lag_col_names
+
+housing_interest_new_lags=take.year.lag(housing_interest_new$Interest)
+lag_col_names=c()
+for (i in 1:lag.count){
+  lag_col_names=append(lag_col_names,paste0("Interest_lag_",i))
+}
+colnames(housing_interest_new_lags)=lag_col_names
+
+dollar_buying_new_lags=take.year.lag(dollar_buying_new$Rate)
+lag_col_names=c()
+for (i in 1:lag.count){
+  lag_col_names=append(lag_col_names,paste0("Rate_lag_",i))
+}
+colnames(dollar_buying_new_lags)=lag_col_names
+
+```
+
+```{r warning=FALSE, message=FALSE}
+
+house_sales_main<-cbind(house_sales_new,house_sales_new_lags,household_new_lags.Real,household_new_lags.Expectation,housing_interest_new_lags,dollar_buying_new_lags)
+house_sales_main<-na.omit(house_sales_main)
+
+house_sales_main$Year<-as.numeric(format(house_sales_main$Date, format="%Y"))
+house_sales_main$Month<-as.numeric(format(house_sales_main$Date, format="%m"))
+
+model<-lm(Expenditure~.-Date,data=house_sales_main)
+summary(model)
+
+final.model<-step(lm(Expenditure~.-Date , data=house_sales_main),direction="backward")
+summary(final.model)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+#model
+#final.model
+pred_df=c(21815,14669,10732,14631,24450,25566,67.16521,64.69312,62.11510,64.90300,65.9866,67.83600,87.92016,84.51865,83.80907,78.85528,79.02186,79.50939,17.7350,17.9850,18.3880,18.1925,15.6750,15.0660,7.628235,7.072365,7.393975,7.721065,8.003324,7.873881,2021,4)
+pred_df=transpose(data.frame(pred_df))
+colnames(pred_df)=colnames(house_sales_main)[3:length(colnames(house_sales_main))]
+
+```
